@@ -1,4 +1,5 @@
-import { readdirSync, mkdirSync } from 'node:fs';
+import { readdirSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 const root = fileURLToPath(new URL('../../', import.meta.url));
@@ -7,7 +8,15 @@ const specs = readdirSync(specDirectory)
   .filter((name) => name.endsWith('.spec.js'))
   .sort();
 if (process.env.TEST_ORDER === 'reverse') specs.reverse();
-const args = ['--disable-dev-shm-usage', '--window-size=1440,1000', '--lang=en-US'];
+const browserProfile = mkdtempSync(path.join(tmpdir(), 'module11-chrome-'));
+const args = [
+  '--disable-dev-shm-usage',
+  '--window-size=1440,1000',
+  '--lang=en-US',
+  `--user-data-dir=${browserProfile}`,
+  `--crash-dumps-dir=${browserProfile}`,
+];
+if (process.env.CHROME_NO_SANDBOX === 'true') args.push('--no-sandbox');
 if (process.env.HEADLESS !== 'false') args.push('--headless=new');
 if (process.env.BROWSER_PROXY) args.push(`--proxy-server=${process.env.BROWSER_PROXY}`);
 export const config = {
@@ -49,5 +58,8 @@ export const config = {
         path.join(directory, `${test.title.replace(/[^a-z0-9]+/gi, '-')}.png`),
       );
     }
+  },
+  async afterSession() {
+    rmSync(browserProfile, { recursive: true, force: true });
   },
 };

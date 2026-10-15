@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        CHROME_NO_SANDBOX = 'true'
+    }
+
     triggers {
         cron('H */2 * * *')
     }
