@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+
+    triggers {
+        cron('H */2 * * *')
+    }
+
+    options {
+        timestamps()
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/rusikmihajlan/module11.git'
+            }
+        }
+        stage('Install dependencies') {
+            steps {
+                sh 'npm ci'
+            }
+        }
+        stage('UI tests') {
+            steps {
+                sh 'npm run test:ui'
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'artifacts/**/*.png', allowEmptyArchive: true
+        }
+    }
+}
